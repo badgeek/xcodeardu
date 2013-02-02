@@ -62,4 +62,6 @@ ISR(TIMER1_COMPA_vect)
     t++;
     OCR0A = ((t>>2|t>>4)&90&t>>5&t>>9&t>>3&t>>5);
     
+    if (t>65534) t=0;
+    
 }
