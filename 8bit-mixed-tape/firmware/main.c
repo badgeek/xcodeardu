@@ -23,8 +23,19 @@
 volatile unsigned long t; // long
 volatile uint8_t snd; // 0...255
 volatile uint8_t sfx; // 0...255
+volatile uint8_t pot1; // 0...255
 volatile int j = 50;
 
+void adc_init()
+{
+    ADCSRA |= _BV(ADIE); //adc interrupt enable
+    ADCSRA |= _BV(ADEN); //adc enable
+    ADCSRA |= _BV(ADATE); //auto trigger
+    ADCSRA |= _BV(ADPS0) | _BV(ADPS1) | _BV(ADPS2); //prescale 128
+    ADMUX  |= _BV(ADLAR); //ADLAR = 1 left adjusted
+    ADMUX  |= _BV(MUX1);
+    ADCSRB = 0;
+}
 
 void timer_init()
 {
@@ -57,8 +68,6 @@ void timer_init()
     //OCR1C = 46; // (16500000/16)/22050 = 46
     //OCR1C = 23; // (16500000/16)/44100 = 23
 
-    //ENABLE INTERRUPT
-    sei(); //enable global interrupt
     
     // babygnusb led pin
     DDRB |= (1<<PB0);
@@ -68,6 +77,12 @@ int main(void)
 {
     // initialize timer & Pwm
     timer_init();	
+    adc_init();
+    //ENABLE INTERRUPT
+    sei(); //enable global interrupt
+    
+    ADCSRA |= _BV(ADSC); //start adc conversion
+    
     // run forever
     while(1)
     {
@@ -82,11 +97,11 @@ ISR(TIMER1_COMPA_vect)
  
     int value50 = 30;
 
-    snd = (t * (t>>5|t>>8))>>(t>>16); //viznut
-    //snd = (t * ((t>>12|t>>8)&63&t>>4));//floor((delay_efek[t%99]);
-    sfx = (snd >> 4 << 7);
-    //sfx = (snd >> 2 << 3);
-    //sfx = sfx | j;
+    snd = (t * (t>>pot1|t>>8))>>(t>>16); //viznut
+    //snd = (t * ((t>>12|t>>pot1)&63&t>>4));//floor((delay_efek[t%99]);
+    //sfx = (snd >> 4 << 7);
+    sfx = (snd >> 2 << 3);
+    sfx = sfx | j;
     OCR0A = sfx;
 
     j = j - 1;
@@ -96,4 +111,9 @@ ISR(TIMER1_COMPA_vect)
     
     
     t++;
+}
+
+ISR(ADC_vect)
+{
+    pot1 = ADCH;
 }
