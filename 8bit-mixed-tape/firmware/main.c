@@ -42,7 +42,7 @@ void timer_init()
     //TCCR1 |= _BV(CS10) | _BV(CS13); // prescale 256
     TIMSK |= _BV(OCIE1A); //activate compare interruppt
     //OCR1A = 3; // (16500000/2)/387 = 22050Hz
-    OCR1C = 125; // (16500000/2)/187 = 44100Hz
+    OCR1C = 129; // (16500000/16)/129 = 8000Hz
     TCNT1 = 0; //init count
     
     sei(); //enable global interrupt
@@ -67,8 +67,8 @@ ISR(TIMER1_COMPA_vect)
 {
     t++;
 
-    OCR0A = (t * (t>>5|t>>8))>>(t>>16); //viznut
-    //OCR0A = t * ((t>>12|t>>8)&63&t>>4);
+    //OCR0A = (t * (t>>5|t>>8))>>(t>>16); //viznut
+    OCR0A = t * ((t>>12|t>>8)&63&t>>4);
     
     //if (t>65534) t=0;
     
