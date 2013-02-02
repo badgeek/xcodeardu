@@ -18,7 +18,13 @@
 */
 
 
-volatile unsigned long t; //unsigned interger 0 - 65535
+//unsigned int delay_efek[200];
+
+volatile unsigned long t; // long
+volatile uint8_t snd; // 0...255
+volatile uint8_t sfx; // 0...255
+volatile int j = 50;
+
 
 void timer_init()
 {
@@ -72,7 +78,22 @@ int main(void)
 
 ISR(TIMER1_COMPA_vect)
 {
+    //delay_efek[t%99] = ((t * ((t>>12|t>>8)&63&t>>4))/2);
+ 
+    int value50 = 30;
+
+    snd = (t * (t>>5|t>>8))>>(t>>16); //viznut
+    //snd = (t * ((t>>12|t>>8)&63&t>>4));//floor((delay_efek[t%99]);
+    sfx = (snd >> 4 << 7);
+    //sfx = (snd >> 2 << 3);
+    //sfx = sfx | j;
+    OCR0A = sfx;
+
+    j = j - 1;
+    if (j <= 0) {
+        j = value50;
+    }
+    
+    
     t++;
-    //OCR0A = (t * (t>>5|t>>8))>>(t>>16); //viznut
-    OCR0A = t * ((t>>12|t>>8)&63&t>>4);
 }
