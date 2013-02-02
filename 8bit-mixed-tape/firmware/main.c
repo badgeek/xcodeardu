@@ -25,26 +25,33 @@ void timer_init()
     //PWM SOUND OUTPUT
     TCCR0A |= (1<<WGM00)|(1<<WGM01); //Fast pwm
     //TCCR0A |= (1<<WGM00) ; //Phase correct pwm
-    
     TCCR0A |= (1<<COM0A1); //Clear OC0A/OC0B on Compare Match when up-counting.
     TCCR0B |= (1<<CS00);//no prescale
-	
         
     //TIMER1 SOUND GENERATOR @ 44100hz
     //babygnusb attiny85 clock frequency = 16.5 Mhz
+    
+    //TIMER SETUP
     TCCR1 |= _BV(CTC1); //clear timer on compare
+    TIMSK |= _BV(OCIE1A); //activate compare interruppt
+    TCNT1 = 0; //init count
+
+    //TIMER FREQUENCY
     //TCCR1 |= _BV(CS10); // prescale 1
     //TCCR1 |= _BV(CS11); // prescale 2
     TCCR1 |= _BV(CS10)|_BV(CS12); // prescale 16    
     //TCCR1 |= _BV(CS11)|_BV(CS12); // prescale 32
     //TCCR1 |= _BV(CS10)|_BV(CS11)|_BV(CS12); // prescale 64
     //TCCR1 |= _BV(CS13); // prescale 128
-    //TCCR1 |= _BV(CS10) | _BV(CS13); // prescale 256
-    TIMSK |= _BV(OCIE1A); //activate compare interruppt
-    //OCR1A = 3; // (16500000/2)/387 = 22050Hz
-    OCR1C = 129; // (16500000/16)/129 = 8000Hz
-    TCNT1 = 0; //init count
+    //TCCR1 |= _BV(CS10) | _BV(CS13); // prescale 256    
     
+    //SAMPLE RATE
+    OCR1C = 128; // (16500000/16)/8000 = 128
+    //OCR1C = 93; // (16500000/16)/11025 = 93
+    //OCR1C = 46; // (16500000/16)/22050 = 46
+    //OCR1C = 23; // (16500000/16)/44100 = 23
+
+    //ENABLE INTERRUPT
     sei(); //enable global interrupt
     
     // babygnusb led pin
@@ -66,10 +73,6 @@ int main(void)
 ISR(TIMER1_COMPA_vect)
 {
     t++;
-
     //OCR0A = (t * (t>>5|t>>8))>>(t>>16); //viznut
     OCR0A = t * ((t>>12|t>>8)&63&t>>4);
-    
-    //if (t>65534) t=0;
-    
 }
