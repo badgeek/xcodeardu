@@ -14,11 +14,15 @@ volatile uint16_t count2;
 int main(void)
 {
     
-    TCCR1 |= _BV(CTC1); //clear timer on compare
-    //TCCR1 &= ~(_BV(COM1A1)|_BV(COM1A0)); // disconnect from OC1A
-    TCCR1 |= _BV(CS10); // no prescale
+    //prescale
+    TCCR1 |= _BV(CS10); // no prescale    
     //TCCR1 |= _BV(CS11); // prescale 2
+    
+    //timer overflow
     //TIMSK |= _BV(TOIE1); //timer overflow
+    
+    //timer compare
+    TCCR1 |= _BV(CTC1); //clear timer on compare
     TIMSK |= _BV(OCIE1A); //activate compare interruppt
     OCR1C = 254;
     TCNT1 = 0;
@@ -36,11 +40,30 @@ int main(void)
 }
 
 
+
+
+ISR(TIMER1_OVF_vect)
+{
+    count++;
+    
+    if (count >= 64960) {
+        PORTB ^= (1 << PB0);
+        //count2++;
+        count = 0;
+    }
+    
+    //if (count2 >= 2) {
+    //    PORTB ^= (1 << PB0);
+    //    count2 = 0;
+    //}
+    
+}
+
 ISR(TIMER1_COMPA_vect)
 {
     count++;
     
-    if (count >= 22050) {
+    if (count >= 64960) {
         PORTB ^= (1 << PB0);
         //count2++;
         count = 0;
