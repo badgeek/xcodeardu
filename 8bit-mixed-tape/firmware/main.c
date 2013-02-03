@@ -18,13 +18,19 @@
 */
 
 
-//unsigned int delay_efek[200];
-
 volatile unsigned long t; // long
 volatile uint8_t snd; // 0...255
 volatile uint8_t sfx; // 0...255
 volatile uint8_t pot1; // 0...255
+volatile uint8_t pot2; // 0...255
 volatile int j = 50;
+
+
+//ADMUX ADC
+volatile uint8_t adc1 = _BV(ADLAR) | _BV(MUX1); //PB4-ADC2
+volatile uint8_t adc2 = _BV(ADLAR) | _BV(MUX0) | _BV(MUX1); //PB3-ADC3
+
+
 
 void adc_init()
 {
@@ -33,8 +39,13 @@ void adc_init()
     ADCSRA |= _BV(ADATE); //auto trigger
     ADCSRA |= _BV(ADPS0) | _BV(ADPS1) | _BV(ADPS2); //prescale 128
     ADMUX  |= _BV(ADLAR); //ADLAR = 1 left adjusted
-    ADMUX  |= _BV(MUX1);
+    ADMUX  |= _BV(MUX1); //PB2
     ADCSRB = 0;
+}
+
+void adc_start()
+{
+    ADCSRA |= _BV(ADSC); //start adc conversion   
 }
 
 void timer_init()
@@ -63,7 +74,7 @@ void timer_init()
     //TCCR1 |= _BV(CS10) | _BV(CS13); // prescale 256    
     
     //SAMPLE RATE
-    OCR1C = 128; // (16500000/16)/8000 = 128
+    OCR1C = 129; // (16500000/16)/8000 = 128
     //OCR1C = 93; // (16500000/16)/11025 = 93
     //OCR1C = 46; // (16500000/16)/22050 = 46
     //OCR1C = 23; // (16500000/16)/44100 = 23
@@ -75,19 +86,17 @@ void timer_init()
 
 int main(void)
 {
-    // initialize timer & Pwm
-    timer_init();	
-    adc_init();
-    //ENABLE INTERRUPT
+    timer_init();// initialize timer & Pwm	
+    adc_init(); //init adc
     sei(); //enable global interrupt
-    
-    ADCSRA |= _BV(ADSC); //start adc conversion
+    adc_start(); //start adc conversion
     
     // run forever
     while(1)
     {
 		
     }
+    
     return 0;
 }
 
@@ -97,12 +106,14 @@ ISR(TIMER1_COMPA_vect)
  
     int value50 = 30;
 
-    snd = (t * (t>>pot1|t>>8))>>(t>>16); //viznut
+    snd = (t*5&t>>7)|(t*pot1&t>>10)  ;
+    
+    //snd = (t * (t>>5|t>>8))>>(t>>16); //viznut
     //snd = (t * ((t>>12|t>>pot1)&63&t>>4));//floor((delay_efek[t%99]);
     //sfx = (snd >> 4 << 7);
-    sfx = (snd >> 2 << 3);
-    sfx = sfx | j;
-    OCR0A = sfx;
+    //sfx = (snd >> 2 << 3);
+    //sfx = sfx | j;
+    OCR0A = snd;
 
     j = j - 1;
     if (j <= 0) {
@@ -115,5 +126,20 @@ ISR(TIMER1_COMPA_vect)
 
 ISR(ADC_vect)
 {
-    pot1 = ADCH;
+    static uint8_t firstTime = 1;
+    static uint8_t val;
+    
+    val = ADCH;
+    
+    if (firstTime == 1)
+        firstTime = 0;
+    else if (ADMUX  == adc1) {
+        pot1 = val;
+        ADMUX = adc2;
+    }
+    else if ( ADMUX == adc2) {
+        pot2  = val;
+        ADMUX = adc1;
+    }
+    
 }
