@@ -21,14 +21,20 @@
 volatile unsigned long t; // long
 volatile uint8_t snd; // 0...255
 volatile uint8_t sfx; // 0...255
+
 volatile uint8_t pot1; // 0...255
 volatile uint8_t pot2; // 0...255
+volatile uint8_t pot3; // 0...255
+
 volatile int j = 50;
 
+volatile int btn_toggle = 0;
 
 //ADMUX ADC
-volatile uint8_t adc2 = _BV(ADLAR) | _BV(MUX1); //PB4-ADC2 pot1
-volatile uint8_t adc3 = _BV(ADLAR) | _BV(MUX0) | _BV(MUX1); //PB3-ADC3 pot2
+
+volatile uint8_t adc1 = _BV(ADLAR) | _BV(MUX0); //PB2-ADC1 pot1
+volatile uint8_t adc2 = _BV(ADLAR) | _BV(MUX1); //PB4-ADC2 pot2
+volatile uint8_t adc3 = _BV(ADLAR) | _BV(MUX0) | _BV(MUX1); //PB3-ADC3 pot3
 
 
 void adc_init()
@@ -37,7 +43,7 @@ void adc_init()
     ADCSRA |= _BV(ADEN); //adc enable
     ADCSRA |= _BV(ADATE); //auto trigger
     ADCSRA |= _BV(ADPS0) | _BV(ADPS1) | _BV(ADPS2); //prescale 128
-    ADMUX  = adc3;
+    ADMUX  = adc1;
     ADCSRB = 0;
 }
 
@@ -79,7 +85,42 @@ void timer_init()
 
     
     // babygnusb led pin
-    DDRB |= (1<<PB0);
+    DDRB |= (1<<PB0); //pin connected to led
+    
+}
+
+
+void button_init()
+{
+    PORTB |= (1<<PB3); //pin btn
+}
+
+
+int button_is_pressed(uint8_t button_pin, uint8_t button_bit)
+{
+    /* the button is pressed when BUTTON_BIT is clear */
+    if (!bit_is_clear(button_pin, button_bit))
+    {
+        _delay_ms(25);
+        if (!bit_is_clear(button_pin, button_bit)) return 1;
+    }
+    
+    return 0;
+}
+
+int button_is_changed()
+{
+    int prev_state = btn_toggle;
+    
+    if (int x = button_is_pressed(PORTB, PB3) {
+        if (prev_state != btn_toggle)
+        {
+            return 1;
+        }else{
+            return 0;
+        }
+    }
+        
 }
 
 int main(void)
@@ -92,7 +133,6 @@ int main(void)
     // run forever
     while(1)
     {
-		
     }
     
     return 0;
@@ -140,13 +180,13 @@ ISR(ADC_vect)
     
     if (firstTime == 1)
         firstTime = 0;
-    else if (ADMUX  == adc3) {
-        pot2 = val;
+    else if (ADMUX  == adc1) {
+        pot1 = val;
         ADMUX = adc2;
     }
     else if ( ADMUX == adc2) {
-        pot1  = val;
-        ADMUX = adc3;
+        pot2  = val;
+        ADMUX = adc1;
     }
     
 }
